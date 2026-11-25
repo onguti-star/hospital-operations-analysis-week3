@@ -1,0 +1,180 @@
+Hospital Operations, Cost & Patient Flow Intelligence
+
+Statistical Investigation & Insight Discovery (Track B: Data Science)Programme: AnalystLab Africa Experience Lab Internship
+
+Project: Week 3 — Healthcare Analytics and AI Implementation
+
+Track: Track B: Data Science
+
+Organization Reviewed: Massachusetts General Hospital
+
+Report File: hospital_operations_statistical_report.pdf
+
+Analysis Notebook: hospital_operations_statistical_analysis.ipynb1. Executive SummaryHealthcare administrators need reliable visibility into patient visit volumes, length of stay, billed costs, and insurance coverage to set budgets and staff clinical departments. This study examined eleven years of historical records from Massachusetts General Hospital (January 2011–February 2022). The data covered 27,891 patient encounters, 47,701 clinical procedures, 974 unique patients, and 10 insurance payers.Exploratory analysis and non-parametric statistical tests in Python showed that routine ambulatory visits account for nearly half of all traffic (44.95%). Inpatient admissions, however, carry the highest median cost ($2,355.59 per visit) and the longest stays (median 24 hours). Longer visits are moderately associated with higher claim costs. Insurance reimbursement also varies sharply across payers; nearly one-third of encounters (31.58%) are recorded as uninsured with zero coverage.2. Business Problem & Research QuestionsThe Operational Challenge
+
+Hospital operations and finance teams need a clear view of how different visit types consume resources and how much of those costs are recovered through insurance. Without cost and length-of-stay breakdowns by care setting, leadership risks under-allocating resources to high-intensity departments or missing large uncompensated care gaps.Research Questions
+Primary: How do recorded encounter costs (TOTAL_CLAIM_COST and BASE_ENCOUNTER_COST) and insurance coverage (PAYER_COVERAGE) vary across hospital encounter classes?
+Supporting 1: Are longer encounter durations associated with higher total claim costs?
+Supporting 2: How do claim costs and insurance coverage differ across insurance payers and frequently performed procedures?
+Intended Audience & Decisions Supported
+
+This report is intended for hospital operations managers, healthcare financial analysts, and revenue-cycle teams. The findings support three practical decisions:
+Aligning staffing and bed capacity between high-volume outpatient clinics and high-cost inpatient units.
+Identifying care settings and payer groups with large out-of-pocket or uncompensated billing gaps.
+Establishing baseline cost benchmarks for departmental budgeting.
+3. Dataset Inspection & Data PreparationAll five core datasets were audited in Python before any statistical tests. No exact duplicate rows were found, and all timestamps were clean with no negative visit durations.Dataset Summary
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+File NameRecordsColumns UsedKey Findings & Data Hygiene Decisionsencounters.csv27,89114Covers 2 Jan 2011 to 5 Feb 2022 (February 2022 is a partial month). REASONCODE and REASONDESCRIPTION are blank in 19,541 routine visits; these rows were retained.procedures.csv47,7019Links to encounters via ENCOUNTER. REASONCODE is blank in 36,945 routine/preventive procedures and was retained.patients.csv97417Directly identifying fields (FIRST, LAST, ADDRESS) were removed on loading to protect privacy. DEATHDATE is blank for the 820 living patients.payers.csv107Lists 9 insurance plans plus NO_INSURANCE (blank address and phone fields are legitimate).organizations.csv18Identifies Massachusetts General Hospital in Boston, MA.Relational Structure & Feature Engineering
+
+Encounters form the central table, linking many-to-one to patients, payers, and organizations, and one-to-many to procedures.Calculated fields:
+Exact visit duration in hours from START and STOP timestamps (duration_hours)
+Total procedures per visit (procedure_count)
+Uncompensated coverage gap (TOTAL_CLAIM_COST – PAYER_COVERAGE)
+4. Success CriteriaThe analysis was evaluated against four standards:
+Accurate reconciliation: All grouped counts, medians, and averages were cross-checked against raw table totals with no discrepancies.
+Method alignment: Distribution skewness was checked both visually and numerically before non-parametric tests were selected.
+Privacy & reproducibility: The Jupyter notebook runs cleanly from top to bottom, exports high-resolution charts automatically, and contains no patient names or street addresses.
+Honest interpretation: Results distinguish statistical significance from practical impact and avoid claims of clinical causation.
+5. Statistical Methodology & HypothesesHospital cost and length-of-stay data are heavily right-skewed. A small number of complex inpatient stays pull averages far above typical visit costs. Because the distributions are non-normal, non-parametric tests that compare medians and rank orders were used. All tests used a significance level of 0.05.Hypothesis 1 – Costs across care settings
+Null: Median TOTAL_CLAIM_COST is the same across all six encounter classes.
+Alternative: At least one encounter class has a significantly different median TOTAL_CLAIM_COST.
+Test: Kruskal-Wallis H-test.
+Hypothesis 2 – Visit duration vs. claim cost
+Null: No monotonic relationship exists between encounter duration (hours) and TOTAL_CLAIM_COST.
+Alternative: Longer durations are monotonically associated with higher TOTAL_CLAIM_COST.
+Test: Spearman rank correlation.
+Hypothesis 3 – Insurance coverage across payers
+Null: Median PAYER_COVERAGE does not differ across insurance payers.
+Alternative: At least one payer shows significantly different recorded coverage.
+Test: Kruskal-Wallis H-test.
+6. Exploratory Findings & Statistical Results6.1 Encounter Volume & Cost by Care SettingHospital traffic is concentrated in outpatient settings; costs peak in inpatient care.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Encounter ClassVisitsShare of VisitsMedian DurationMedian Claim CostMean Claim CostAmbulatory12,53744.95%0.25 hrs$573.98$2,894.11Outpatient6,30022.59%0.25 hrs$278.58$2,237.30Urgent Care3,66613.14%0.25 hrs$142.58$6,369.16Emergency2,3228.33%1.00 hr$146.18$4,629.65Wellness1,9316.92%0.25 hrs$1,231.44$4,260.71Inpatient1,1354.07%24.00 hrs$2,355.59$7,761.35Statistical result (Hypothesis 1): Kruskal-Wallis H = 2025.19, p < 0.0001. Claim costs differ significantly across care settings.Practical meaning: Inpatient admissions represent only 4.07% of visits yet have a median cost more than eight times higher than routine outpatient visits. Urgent care shows a low median cost paired with a high mean, indicating a small number of acute cases with expensive interventions.[Insert Figure 1: Visualisations/01_encounter_volume_by_class.png]
+
+[Insert Figure 2: Visualisations/02_metric_by_encounter_class.png]6.2 Visit Duration & Claim Cost RelationshipStatistical result (Hypothesis 2): Spearman ρ = 0.3379, p < 0.0001. A statistically significant, moderate positive association exists between visit length and total claim cost.Practical meaning: Longer stays, especially inpatient admissions (average 36.84 hours), generally cost more. The moderate correlation (0.34) shows that length of stay is not the only cost driver; brief outpatient or ambulatory visits that include specialized diagnostics or therapies can also generate substantial claims.[Insert Figure 3: Visualisations/03_duration_vs_metric.png]6.3 Payer Mix & Insurance Coverage GapsMedicare accounts for the largest share of visits (11,371 encounters; mean claim $2,167.55; mean coverage $1,689.89). NO_INSURANCE is the second-largest group (8,807 encounters, 31.58% of all visits) with an average claim of $5,593.20 and $0.00 recorded coverage. Public programs such as Medicaid (mean coverage $5,833.66) and Dual Eligible ($1,513.93) cover most billed charges. Several commercial plans (Humana, Aetna, UnitedHealthcare, Cigna Health, Anthem) show $0.00 median recorded coverage in the extract.Statistical result (Hypothesis 3): Kruskal-Wallis H = 22239.03, p < 0.0001. Recorded reimbursement differs substantially across payers.[Insert Figure 4: Visualisations/04_encounters_by_payer.png]6.4 Procedure Utilisation & Cost DriversAcross 47,701 recorded procedures, high-volume standardized assessments dominate:
+Assessment using Morse Fall Scale (2,422 procedures; median base cost $431.00)
+Assessment of anxiety (2,288; $431.00)
+Medication Reconciliation (2,284; median $496.00)
+Screening for drug abuse (1,484; $431.00)
+Individual screening costs are modest, but high repetition creates steady baseline operational demand.[Insert Figure 5: Visualisations/05_top_procedures_frequency.png]7. Data Limitations & Methodological Caveats
+Billed claims vs. real expenses: BASE_ENCOUNTER_COST and TOTAL_CLAIM_COST reflect recorded claim charges, not actual hospital operating costs (staff wages, utilities, supplies) or final cash collected after insurer adjustments.
+Repeated patient visits: The 27,891 encounters belong to 974 unique patients. Encounter-level tests treat visits as separate operational events rather than independent individuals.
+Single-facility scope: All encounters occurred at Massachusetts General Hospital; results may not generalize to smaller rural clinics or specialty hospitals.
+Commercial payer recording: Several private insurers show $0.00 median coverage, which may reflect synthetic dataset rules or high-deductible plan structures rather than actual denials.
+Association vs. causation: Observed links between care setting, visit length, and claim cost describe billing patterns only and do not establish clinical causation.
+8. Recommendations1. Set length-of-stay and cost benchmarks for high-acuity units
+
+Inpatient encounters have a median cost of $2,355.59 (more than 8× outpatient costs) and a median stay of 24 hours. Urgent care shows extreme high-cost outliers (mean $6,369.16 vs. median $142.58).
+
+Action: Establish review triggers for inpatient stays exceeding 36 hours and audit high-cost urgent care claims to separate routine walk-ins from complex cases.
+
+Limitation: True departmental margins require internal cost-accounting data.2. Expand front-desk coverage screening and financial counseling
+
+Nearly one-third of encounters (8,807 visits, 31.58%) are recorded under NO_INSURANCE with an average claim of $5,593.20 and $0 coverage.
+
+Action: Introduce proactive insurance verification and financial-assistance screening during ambulatory and outpatient registration so eligible patients can be connected earlier to Medicaid or subsidized programs.
+
+Limitation: Actual bad-debt write-off figures are needed to estimate recoverable uncompensated care.3. Streamline workflows for high-frequency standardized screenings
+
+Fall-risk scales, anxiety screenings, medication reconciliations, and substance screenings account for thousands of repeated procedures at fixed base rates ($431–$496).
+
+Action: Bundle routine intake assessments into standardized digital pre-visit workflows to reduce clinic bottlenecks and claim fragmentation.9. Attribution & GovernanceData source: Healthcare Operations Dataset Pack (encounters.csv, patients.csv, procedures.csv, payers.csv, organizations.csv) supplied by AnalystLab Africa for Week 3 of the Experience Lab Internship Programme.Tools used: Python 3, Pandas, NumPy, SciPy, Matplotlib, Seaborn, Jupyter Notebook (VS Code), LibreOffice Writer.Privacy compliance: All patient names and street addresses were removed before analysis. All reported metrics are aggregated operational figures only.
+
